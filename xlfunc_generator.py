@@ -14,6 +14,7 @@ imports = ['structuralcodes.codes.ec2_2004', 'structuralcodes.codes.mc2010']
 
 file_xlwings = open("xlfunc.py", "x")
 file_xlwings.write('import xlwings as xw' + "\n")
+file_xlwings.write('import typing as t' + "\n")
 for module in imports:
     file_xlwings.write('import ' + module + "\n")
 
@@ -54,6 +55,12 @@ for module in imports:
 
                             def_param_types = def_param_types.split(')')[0]
                             def_param_types = def_param_types.split(',')
+                            def_param_types = [
+                                s.strip() for s in def_param_types
+                            ]  # remove blanks and  \n
+                            def_param_types = [
+                                s.lstrip("_") for s in def_param_types
+                            ]  # remove initial "_" in parameters
 
                             # def_param_types -> list of params without type
                             def_param = []
