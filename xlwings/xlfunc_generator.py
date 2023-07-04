@@ -2,30 +2,42 @@ import inspect
 import os
 import sys
 
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+sys.path.append(parent_dir + '\\structuralcodes')
 import structuralcodes.codes.ec2_2004
 import structuralcodes.codes.mc2010
 
 # remove previous file
-if os.path.exists("xlfunc.py"):
-    os.remove("xlfunc.py")
+if os.path.exists("xlwings\\xlfunc.py"):
+    os.remove("xlwings\\xlfunc.py")
 
 # imports
 imports = ['structuralcodes.codes.ec2_2004', 'structuralcodes.codes.mc2010']
 
-file_xlwings = open("xlfunc.py", "x")
-file_xlwings.write('import xlwings as xw' + "\n")
+file_xlwings = open("xlwings\\xlfunc.py", "x")
+
+
+file_xlwings.write('import os' + "\n")
+file_xlwings.write('import sys' + "\n")
 file_xlwings.write('import typing as t' + "\n")
+file_xlwings.write('' + "\n")
+file_xlwings.write(
+    'parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))' + "\n"
+)
+file_xlwings.write('sys.path.append(parent_dir + "\\structuralcodes")' + "\n")
+file_xlwings.write('import xlwings as xw' + "\n")
+
 for module in imports:
     file_xlwings.write('import ' + module + "\n")
 
 # main xlwings
-file_xlwings.write('def main():' + "\n")
-file_xlwings.write('    wb = xw.Book.caller()' + "\n")
-file_xlwings.write('    sheet = wb.sheets[0]' + "\n")
-file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + "\n")
-file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + "\n")
-file_xlwings.write('    else:' + "\n")
-file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + "\n")
+ file_xlwings.write('def main():' + "\n")
+ file_xlwings.write('    wb = xw.Book.caller()' + "\n")
+ file_xlwings.write('    sheet = wb.sheets[0]' + "\n")
+ file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + "\n")
+ file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + "\n")
+ file_xlwings.write('    else:' + "\n")
+ file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + "\n")
 
 # search functions
 for module in imports:
@@ -99,10 +111,10 @@ for module in imports:
                             )
 
 
-file_xlwings.write('\nif __name__ == "__main__":' + "\n")
-file_xlwings.write(
-    '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + "\n"
-)
-file_xlwings.write('    main()' + "\n")
+ file_xlwings.write('\nif __name__ == "__main__":' + "\n")
+ file_xlwings.write(
+     '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + "\n"
+ )
+ file_xlwings.write('    main()' + "\n")
 
 file_xlwings.close

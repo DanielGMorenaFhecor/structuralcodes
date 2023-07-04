@@ -1,9 +1,8 @@
 import typing as t
 
-import xlwings as xw
-
 import structuralcodes.codes.ec2_2004
 import structuralcodes.codes.mc2010
+import xlwings as xw
 
 
 def main():
@@ -374,7 +373,7 @@ def ec2_2004_alpha_e(Es: float, Ecm: float):
 
 
 @xw.func
-def ec2_2004_rho_p_eff(As: float, xi1: float, Ap: float, Ac_eff: float):
+def ec2_2004_rho_p_eff(As_: float, xi1: float, Ap: float, Ac_eff: float):
     """Effective bond ratio between areas
 
     EUROCODE 2 1992-1-1:2004, Eq. (7.10)
@@ -393,7 +392,7 @@ def ec2_2004_rho_p_eff(As: float, xi1: float, Ap: float, Ac_eff: float):
 
     Raise:
         ValueError: if any of As, xi1, Ap or Ac_eff is less than 0"""
-    return structuralcodes.codes.ec2_2004.rho_p_eff(As, xi1, Ap, Ac_eff)
+    return structuralcodes.codes.ec2_2004.rho_p_eff(As_, xi1, Ap, Ac_eff)
 
 
 @xw.func
@@ -644,7 +643,7 @@ def ec2_2004_sr_max_theta(sr_max_y: float, sr_max_z: float, theta: float):
     """Computes the crack spacing sr_max when there is an angle
     between the angle of  principal stress and the direction
     of the reinforcement, for members in two orthogonal directions,
-    that is significant (> 15�).
+    that is significant (> 15 degrees).
 
     EUROCODE 2 1992-1-1:2004, Eq. (7.15)
 
