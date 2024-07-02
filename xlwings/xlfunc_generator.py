@@ -111,10 +111,11 @@ for module in imports:
                             )
 
 
- file_xlwings.write('\nif __name__ == "__main__":' + "\n")
- file_xlwings.write(
-     '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + "\n"
- )
- file_xlwings.write('    main()' + "\n")
 
-file_xlwings.close
+#file_xlwings.write('\nif __name__ == "__main__":' + "\n")
+# file_xlwings.write(
+#     '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + "\n"
+# )
+# file_xlwings.write('    main()' + "\n")
+
+#file_xlwings.close
