@@ -31,13 +31,13 @@ for module in imports:
     file_xlwings.write('import ' + module + "\n")
 
 # main xlwings
- file_xlwings.write('def main():' + "\n")
- file_xlwings.write('    wb = xw.Book.caller()' + "\n")
- file_xlwings.write('    sheet = wb.sheets[0]' + "\n")
- file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + "\n")
- file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + "\n")
- file_xlwings.write('    else:' + "\n")
- file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + "\n")
+file_xlwings.write('def main():' + "\n")
+file_xlwings.write('    wb = xw.Book.caller()' + "\n")
+file_xlwings.write('    sheet = wb.sheets[0]' + "\n")
+file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + "\n")
+file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + "\n")
+file_xlwings.write('    else:' + "\n")
+file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + "\n")
 
 # search functions
 for module in imports:
