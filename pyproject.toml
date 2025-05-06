@@ -10,20 +10,62 @@ authors = [
     {name = "fib - International Federation for Structural Concrete", email = "info@fib-international.org"}
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent"
 ]
 dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.6.0",
+    "shapely>=2.0.2",
+    "triangle>=20230923",
 ]
 dynamic = ["version", "description"]
 
 [project.urls]
 source = "https://github.com/fib-international/structuralcodes"
 
-[tool.black]
+[tool.ruff]
 line-length = 79
-skip-string-normalization = "True"
-check = "False"
-diff = "False"
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "N",
+    "BLE",
+    "I",
+    "Q",
+    "D",
+    "RET",
+    "SIM",
+    "ARG",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+]
+ignore = [
+    "N802",
+    "N803",
+    "N806",
+    "N999",
+    "PLR0913",
+    "PLR2004",
+    "PLW0603",
+    "D205",
+    "D417",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
