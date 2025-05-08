@@ -2,30 +2,31 @@ import inspect
 import os
 import sys
 
-import structuralcodes.codes.ec2_2004
-import structuralcodes.codes.mc2010
+import structuralcodes.codes.ec2_2023
+
+print(structuralcodes.codes.ec2_2023)
 
 # remove previous file
-if os.path.exists("xlfunc.py"):
-    os.remove("xlfunc.py")
+if os.path.exists('xlfunc.py'):
+    os.remove('xlfunc.py')
 
 # imports
-imports = ['structuralcodes.codes.ec2_2004', 'structuralcodes.codes.mc2010']
+imports = ['structuralcodes.codes.ec2_2023']
 
-file_xlwings = open("xlfunc.py", "x")
-file_xlwings.write('import xlwings as xw' + "\n")
-file_xlwings.write('import typing as t' + "\n")
+file_xlwings = open('xlfunc.py', 'x')
+file_xlwings.write('import xlwings as xw' + '\n')
+file_xlwings.write('import typing as t' + '\n')
 for module in imports:
-    file_xlwings.write('import ' + module + "\n")
+    file_xlwings.write('import ' + module + '\n')
 
 # main xlwings
-file_xlwings.write('def main():' + "\n")
-file_xlwings.write('    wb = xw.Book.caller()' + "\n")
-file_xlwings.write('    sheet = wb.sheets[0]' + "\n")
-file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + "\n")
-file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + "\n")
-file_xlwings.write('    else:' + "\n")
-file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + "\n")
+file_xlwings.write('def main():' + '\n')
+file_xlwings.write('    wb = xw.Book.caller()' + '\n')
+file_xlwings.write('    sheet = wb.sheets[0]' + '\n')
+file_xlwings.write('    if sheet["A1"].value == "Hello xlwings!":' + '\n')
+file_xlwings.write('        sheet["A1"].value = "Bye xlwings!"' + '\n')
+file_xlwings.write('    else:' + '\n')
+file_xlwings.write('        sheet["A1"].value = "Hello xlwings!"' + '\n')
 
 # search functions
 for module in imports:
@@ -59,7 +60,7 @@ for module in imports:
                                 s.strip() for s in def_param_types
                             ]  # remove blanks and  \n
                             def_param_types = [
-                                s.lstrip("_") for s in def_param_types
+                                s.lstrip('_') for s in def_param_types
                             ]  # remove initial "_" in parameters
                             def_param_types = [
                                 item.replace('As', 'As_')
@@ -76,18 +77,16 @@ for module in imports:
                             docstring = inspect.getdoc(my_def)
 
                             # Write @xw function
-                            file_xlwings.write('\n@xw.func' + "\n")
+                            file_xlwings.write('\n@xw.func' + '\n')
                             file_xlwings.write(
                                 'def '
                                 + prefix
                                 + def_name
                                 + '('
                                 + ','.join(def_param_types)
-                                + "):\n"
+                                + '):\n'
                             )
-                            file_xlwings.write(
-                                '    """' + docstring + '"""' "\n"
-                            )
+                            file_xlwings.write('    """' + docstring + '"""\n')
                             file_xlwings.write(
                                 '    return '
                                 + module
@@ -95,14 +94,14 @@ for module in imports:
                                 + def_name
                                 + '('
                                 + ','.join(def_param)
-                                + ")\n"
+                                + ')\n'
                             )
 
 
-file_xlwings.write('\nif __name__ == "__main__":' + "\n")
+file_xlwings.write('\nif __name__ == "__main__":' + '\n')
 file_xlwings.write(
-    '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + "\n"
+    '    xw.Book("pruebaxlwings.xlsm").set_mock_caller()' + '\n'
 )
-file_xlwings.write('    main()' + "\n")
+file_xlwings.write('    main()' + '\n')
 
 file_xlwings.close

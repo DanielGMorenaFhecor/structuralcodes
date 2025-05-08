@@ -1,770 +1,871 @@
-import typing as t
-
-import structuralcodes.codes.ec2_2004
-import structuralcodes.codes.mc2010
+import structuralcodes.codes.ec2_2023
 import xlwings as xw
 
 
 def main():
     wb = xw.Book.caller()
     sheet = wb.sheets[0]
-    if sheet["A1"].value == "Hello fib fellow!":
-        sheet["A1"].value = "Bye fib fellow!"
+    if sheet['A1'].value == 'Hello xlwings!':
+        sheet['A1'].value = 'Bye xlwings!'
     else:
-        sheet["A1"].value = "Hello fib fellow!"
+        sheet['A1'].value = 'Hello xlwings!'
 
 
 @xw.func
-def ec2_2004_w_max(exposure_class: str, load_combination: str):
-    """Computes the recomended value of the maximum crack width.
+def ec2_2023_alpha_c(fcm_28: float):
+    """Returns the coefficient to obtain the tangent modulus of elasticity from
+    the secant modulus of elasticity.
 
-    EUROCODE 2 1992-1-1:2004, Table (7.1N)
+    EN 1992-1-1, Table 5.1
 
     Args:
-        exposure_class (str): The exposure class.
-            Possible values: X0, XC1, XC2, XC3, XC4, XD1, XD2, XS1, XS2, XS3
-        load_combination (str):
-            - f: for frequent load combination
-            - qp: for quasi-permanent load combination
+    fcm_28 (float): The characteristic compressive strength at 28 days
+        in MPa.
 
     Returns:
-        float: The maximum recommended value for the crack width wmax in mm.
+    float: Coefficient alphac so that Ec=alphac*Ecm,28.
+    """
+    return structuralcodes.codes.ec2_2023.alpha_c(fcm_28)
+
+
+@xw.func
+def ec2_2023_fcm(fck: float, delta_f: float = 8.0):
+    """Determines the mean strength of concrete from its characteristic value.
+
+    EN 1992-1-1:2023, Table 5.1.
+
+    Args:
+    fck (float): Is the characteristic compressive strength in MPa.
+
+    Keyword Args:
+    delta_s (float): The increment in MPa to compute the mean compressive
+        strength.
+
+    Returns:
+    float: The mean compressive strength in MPa
+    """
+    return structuralcodes.codes.ec2_2023.fcm(fck, delta_f)
+
+
+@xw.func
+def ec2_2023_fctm(fck: float):
+    """Compute the mean concrete tensile strength from the characteristic
+    compressive strength.
+
+    EN 1992-1-1:2023, Table 5.1.
+
+    Args:
+    fck (float): The characteristic compressive strength in MPa.
+
+    Returns:
+    float: The mean tensile strength in MPa.
+    """
+    return structuralcodes.codes.ec2_2023.fctm(fck)
+
+
+@xw.func
+def ec2_2023_fctk_5(fctm: float):
+    """Compute the 5% mean concrete tensile strength fractile.
+
+    EN 1992-1-1:2023, Table 5.1.
+
+    Args:
+    fctm (float): The mean concrete tensile strength in MPa.
+
+    Returns:
+    float: The 5% mean concrete tensile strength fractile in MPa.
+    """
+    return structuralcodes.codes.ec2_2023.fctk_5(fctm)
+
+
+@xw.func
+def ec2_2023_fctk_95(fctm: float):
+    """Compute the 95% mean concrete tensile strength fractile.
+
+    EN 1992-1-1:2023, Table 5.1.
+
+    Args:
+    fctm (float): The mean concrete tensile strength in MPa.
+
+    Returns:
+    float: The 5% mean concrete tensile strength fractile in MPa.
+    """
+    return structuralcodes.codes.ec2_2023.fctk_95(fctm)
+
+
+@xw.func
+def ec2_2023_Ecm(fcm: float, kE: float = 9500):
+    """Computes the secant modulus between sigma_c=0 and sigma_c=0.4*fcm.
+
+    EN 1992-1-1:2023, Eq. (5.1).
+
+    Args:
+    fcm (float): The mean compressive strength in MPa.
+
+    Keyword Args:
+    kE (float): Coefficient relating the aggregates used in concrete.
+        Default value is 9500, but it can vary from 5000 to 13000.
+
+    Returns:
+    float: The secant concrete modulus in MPa.
 
     Raises:
-        ValueError: if not valid exposure_class or load_combination values."""
-    return structuralcodes.codes.ec2_2004.w_max(
-        exposure_class, load_combination
+    ValueError: If fcm is less than 0.
+    ValueError: If kE is not between 5000 and 13000.
+    """
+    return structuralcodes.codes.ec2_2023.Ecm(fcm, kE)
+
+
+@xw.func
+def ec2_2023_hn(Ac: float, u: float):
+    """Computes the notional size of a given concrete cross-section.
+
+    EN 1992-1-1:2023, Table 5.2.
+
+    Args:
+    Ac (float): The concrete cross-sectional area in (mm2).
+    u (float): The perimeter exposed to drying (mm).
+
+    Returns:
+    float: The notional size (mm).
+
+    Raises:
+    ValueError: If Ac is less than 0.
+    ValueError: If u is less than 0.
+    """
+    return structuralcodes.codes.ec2_2023.hn(Ac, u)
+
+
+@xw.func
+def ec2_2023_phi_correction_factor(fck: float, A_exponent: float):
+    """Computes the correction factor for the computation of the phi_50y_t0.
+
+    EN 1992-1-1:2023, Table 5.2.
+
+    Args:
+    fck (float): Characteristic strength of concrete in MPa.
+    A_exponent (float): The A correction exponent value.
+
+    Returns:
+    float: The correction factor value.
+
+    Raises:
+    ValueError: If fck is not between 12 and 100 MPa.
+    ValueError: If A_exponent is not between 0.64 and 0.82.
+    """
+    return structuralcodes.codes.ec2_2023.phi_correction_factor(
+        fck, A_exponent
     )
 
 
 @xw.func
-def ec2_2004_As_min(
-    A_ct: float, sigma_s: float, fct_eff: float, k: float, kc: float
+def ec2_2023_eta_cc(fck: float, fck_ref: float = 40):
+    """Computes the factor to measure the difference between the undistributed
+    compressive strength of a cylinder and the effective compressive strength
+    in a structural member.
+
+    EN 1992-1-1:2023, Eq. (5.4).
+
+    Args:
+    fck (float): The characterisitic compressive strength in MPa.
+
+    Keyword Args:
+    fck_ref (float, optional): The reference compressive strength MPa.
+
+    Returns:
+    float: The value of the factor eta_cc.
+
+    Raises:
+    ValueError: If fck is less than 12 MPa.
+    ValueError: If fkc_ref is less or equal to 0.
+    """
+    return structuralcodes.codes.ec2_2023.eta_cc(fck, fck_ref)
+
+
+@xw.func
+def ec2_2023_fcd(fck: float, eta_cc: float, k_tc: float, gamma_c: float):
+    """Computes the value of the design compressive strength of concrete.
+
+    EN 1992-1-1:2023, Eq. (5.3).
+
+    Args:
+    fck (float): Characteristic compressive strength in MPa.
+    eta_cc (float): Factor for measuring the difference between the
+        undistributed compressive strength of a cylinder and the effective
+        compressive strength in the real structural member.
+    k_tc (float): Factor for taking into consideration high sustained
+        loads and of time of loading.
+    gamma_c (float): Partial factor of concrete.
+
+    Returns:
+    float: The design compressive strength of concrete in MPa.
+
+    Raises:
+    ValueError: If fck is less than 12 MPa.
+    ValueError: If _etc_cc is not between 0 and 1.
+    ValueError: If gamma_c is less than 1.
+    """
+    return structuralcodes.codes.ec2_2023.fcd(fck, eta_cc, k_tc, gamma_c)
+
+
+@xw.func
+def ec2_2023_fctd(fctk_5: float, k_tt: float, gamma_c: float):
+    """Computes the value of the design tensile strength of concrete.
+
+    EN 1992-1-1:2023, Eq. (5.5).
+
+    Args:
+    fctk_5 (float): The 5% mean concrete tensile strength fractile in MPa.
+    k_tt (float): The factor for considering the effect of high sustained
+        loads and of time of loading on concrete tensile strength.
+    gamma_c (float): Partial factor of concrete.
+
+    Returns:
+    float: The design tensile strength of concrete in MPa.
+
+    Raises:
+    ValueError: If fctk_5 is less than 0.
+    ValueError: If gamma_c is less than 1.
+    """
+    return structuralcodes.codes.ec2_2023.fctd(fctk_5, k_tt, gamma_c)
+
+
+@xw.func
+def ec2_2023_eps_c1(fcm: float):
+    """Computes the strain at maximum compressive strength of concrete (fcm)
+    for the Sargin constitutive law.
+
+    EN 1992-1-1:2023, Eq. (5.9).
+
+    Args:
+    fcm (float): The mean strength of concrete in MPa.
+
+    Returns:
+    float: The strain at maximum compressive strength of concrete.
+
+    Raises:
+    ValueError: If fcm is less than 12+8MPa.
+    """
+    return structuralcodes.codes.ec2_2023.eps_c1(fcm)
+
+
+@xw.func
+def ec2_2023_eps_cu1(fcm: float):
+    """Computes the strain at concrete failure of concrete.
+
+    EN 1992-1-1:2023, Eq. (5.10).
+
+    Args:
+    fcm (float): The mean strength of concrete in MPa.
+
+    Returns:
+    float: The maximum strength at failure of concrete.
+
+    Raises:
+    ValueError: If fcm is less than 12+8MPa.
+    """
+    return structuralcodes.codes.ec2_2023.eps_cu1(fcm)
+
+
+@xw.func
+def ec2_2023_k_sargin(
+    Ecm: float,
+    fcm: float,
+    eps_c1: float,
 ):
-    """Computes the minimum area of reinforcing steel within the tensile zone
-    for control of cracking areas
+    """Computes the coefficient k for Sargin constitutive law in compression.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.1)
-
-    Args:
-        A_ct (float): is the area of concrete within the tensile zone in mm2.
-            The tensile zone is that parg of the section which is calculated
-            to be in tension just before the formation of the first crack.
-        sigma_s (float): is the absolute value of the maximum stress in MPa
-            permitted in the reinforcement immediately after the formation
-            of the crack. This may be taken as theyield strength of the
-            reinforcement, fyk. A lower value may, however, be needed to
-            satisfy the crack width limits according to the maximum
-            bar size of spacing (see 7.3.3 (2)).
-        fct_eff (float): is the mean value of the tensile strength in MPa of
-            the concrete effective at the time when the cracks may first be
-            expected to occur: fct,eff=fct or lower (fct(t)), is cracking
-            is expected earlier than 28 days.
-        _k (float): is the coefficient which allow for the effect of
-            non-uniform self-equilibrating stresses, which lead to a
-            reduction of restraint forces. Use 'k_crack_min_steel_area'
-            to compute it
-            k=1 for webs w<=300mm or flanges widths less than 300mm
-            k=0.65 for webs w>=800mm or flanges with widths greater than 800mm
-            Intermediate values may be interpolated.
-        kc (float): is a coefficient which takes account of the stress
-            distribution within the section immediately prior to cracking and
-            the change of the lever arm.
-
-    Returns:
-        float: the minimm area of reinforcing steel within the tensile
-            zone in mm2.
-
-    Raises:
-        ValueError: if _k value is not between 0.65 and 1 or kc is not
-            larger than 0 and lower than 1."""
-    return structuralcodes.codes.ec2_2004.As_min(A_ct, sigma_s, fct_eff, k, kc)
-
-
-@xw.func
-def ec2_2004_k(h: float):
-    """Is the coefficient which allow for the effect of
-    non-uniform self-equilibrating stresses, which lead to a
-    reduction of restraint forces.
-    k=1 for webs w<=300mm or flanges widths less than 300mm
-    k=0.65 for webs w>=800mm or flanges with widths greater than 800mm
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.1)
+    EN 1992-1-1:2003, eq. (5.7)
 
     Args:
-        h (float): flange length or flange width in mm
+    Ecm (float): the secant modulus between sigma_c=0 and sigma_c=0.4*fcm
+        in MPa
+    fcm (float): the mean compressive strength of concrete in MPa
+    eps_c1 (float): the strain of concrete at stress fcm
 
     Returns:
-        float: k coefficient value
+    float: the coefficient k for Sargin constitutive law
 
     Raises:
-        ValueError: if h is less than 0"""
-    return structuralcodes.codes.ec2_2004.k(h)
-
-
-@xw.func
-def ec2_2004_kc_tension():
-    """Computes the coefficient which takes account of the stress
-    distribution within the section immediately prior to cracking and
-    the change of the lever arm in pure dtension.
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.1)
-
-    Returns:
-        float: value of the kc coefficient in pure tension"""
-    return structuralcodes.codes.ec2_2004.kc_tension()
-
-
-@xw.func
-def ec2_2004_kc_rect_area(h: float, b: float, fct_eff: float, N_ed: float):
-    """Computes the coefficient which takes account of the stress
-    distribution within the section immediately prior to cracking and
-    the change of the lever arm for bending+axial combination
-    in rectangular sections and webs of box sections and T-sections.
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.2)
-
-    Args:
-        h (float): heigth of the element in mm
-        b (float): width of the element in mm
-        fct_eff (float): is the mean value of the tensile strength in MPa of
-            the concrete effective at the time when the cracks may first be
-            expected to occur: fct,eff=fct or lower (fct(t)), is cracking
-            is expected earlier than 28 days.
-        N_ed (str): axial force at the serviceability limit state acting on
-            the part of the cross-section under consideration (compressive
-            force positive). n_ed should be determined considering the
-            characteristic values of prestress and axial forces under the
-            relevant combination of actions
-
-    Returns:
-        float: value of the kc coefficient
-
-    Raises:
-        ValueError: is h or b are less than 0"""
-    return structuralcodes.codes.ec2_2004.kc_rect_area(h, b, fct_eff, N_ed)
-
-
-@xw.func
-def ec2_2004_kc_flanges_area(f_cr: float, A_ct: float, fct_eff: float):
-    """Computes the coefficient which takes account of the stress
-    distribution within the section immediately prior to cracking and
-    the change of the lever arm for bending+axial combination
-    in rectangular sections for flanges of box sections and T-sections.
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.3)
-
-    Args:
-        f_cr: is the absolute value in kN of the tensile force within the
-            flange immediately prior to cracking due to cracking moment
-            calculated with fct,eff
-        A_ct (float): is the area of concrete within the tensile zone in mm2.
-            The tensile zone is that part of the section which is calculated
-            to be in tension just before the formation of the first crack.
-        fct_eff (float): is the mean value of the tensile strength in MPa of
-            the concrete effective at the time when the cracks may first be
-            expected to occur: fct,eff=fct or lower (fct(t)), is cracking
-            is expected earlier than 28 days.
-
-    Returns:
-        float: value of the kc coefficient
-
-    Raises:
-        ValueError: is A_ct is less than 0mm2"""
-    return structuralcodes.codes.ec2_2004.kc_flanges_area(f_cr, A_ct, fct_eff)
-
-
-@xw.func
-def ec2_2004_xi1(xi: float, phi_p: float, phi_s: float):
-    """Computes the adjusted ratio of bond strength taking into account
-    the different diameters of prestressing and reinforcing steel.
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.5)
-
-    Args:
-        xi (float): ratio of bond strength of prestressing and reinforcing
-            steel, according to Table 6.2 in 6.8.2
-        phi_p (float): largest bar diameter in mm of reinforcing steel.
-            Equal to 0 if only prestressing is used in control cracking
-        phi_s (float): equivalent diameter in mm of tendon acoording
-            to 6.8.2
-
-    Returns:
-        float: with the value of the ratio
-
-    Raises:
-        ValueError: if diameters phi_s or phi_p are lower than 0.
-            If ratio of bond strength xi is less than 0.15 or larger than 0.8."""
-    return structuralcodes.codes.ec2_2004.xi1(xi, phi_p, phi_s)
-
-
-@xw.func
-def ec2_2004_hc_eff(h: float, d: float, x: float):
-    """Returns the effective height of concrete in tension surrounding
-    the reinforcement or prestressing tendons.
-
-    EUROCODE 2 1992-1-1:2004, Section (7.3.2-3)
-
-    Args:
-        h (float): total depth of the element in mm
-        d (float): distance in mm to the level of the steel centroid
-        x (float): distance in mm to the zero tensile stress line
-
-    Returns:
-        float: the effective height in mm
-
-    Raises:
-        ValueError: if any of h, d or x is lower than zero.
-        ValueError: if d is greater than h
-        ValueError: if x is greater than h"""
-    return structuralcodes.codes.ec2_2004.hc_eff(h, d, x)
-
-
-@xw.func
-def ec2_2004_As_min_p(
-    A_ct: float,
-    sigma_s: float,
-    fct_eff: float,
-    k: float,
-    kc: float,
-    Ap: float,
-    phi_s: float,
-    phi_p: float,
-    xi: float,
-    delta_s: float,
-):
-    """Computes the minimum area of reinforcing steel within the tensile zone
-    for control of cracking areas in addition with bonded tendons
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.1)
-
-    Args:
-        A_ct (float): is the area of concrete within the tensile zone in mm2.
-            The tensile zone is that part of the section which is calculated
-            to be in tension just before the formation of the first crack.
-        sigma_s (float): is the absolute value of the maximum stress in MPa
-            permitted in the reinforcement immediately after the formation
-            of the crack. This may be taken as theyield strength of the
-            reinforcement, fyk. A lower value may, however, be needed to
-            satisfy the crack width limits according to the maximum
-            bar size of spacing (see 7.3.3 (2)).
-        fct_eff (float): is the mean value of the tensile strength in MPa of
-            the concrete effective at the time when the cracks may first be
-            expected to occur: fct,eff=fct or lower (fct(t)), is cracking
-            is expected earlier than 28 days.
-        _k (float): is the coefficient which allow for the effect of
-            non-uniform self-equilibrating stresses, which lead to a
-            reduction of restraint forces. Use 'k_crack_min_steel_area'
-            to compute it
-            k=1 for webs w<=300mm or flanges widths less than 300mm
-            k=0.65 for webs w>=800mm or flanges with widths greater than 800mm
-            Intermediate values may be interpolated.
-        kc (float): is a coefficient which takes account of the stress
-            distribution within the section immediately prior to cracking and
-            the change of the lever arm.
-        Ap (float): is the area in mm2 of pre or post-tensioned tendons
-            within ac_eff
-        phi_s (float): largest bar diameter in mm of reinforcing steel.
-            Equal to 0 if only prestressing is used in control cracking
-        phi_p (float): equivalent diameter in mm of tendon acoording
-            to 6.8.2
-        chi (float): ratio of bond strength of prestressing and reinforcing
-            steel, according to Table 6.2 in 6.8.2
-        delta_s (float): stress variation in MPa in prestressing tendons
-            from the state of zero strain of the concrete at the same level
-
-    Returns:
-        float: the minimm area of reinforcing steel within the tensile
-            zone in mm2.
-
-    Raises:
-        ValueError: if _k value is not between 0.65 and 1 or kc is not
-            larger than 0 and lower than 1. If diameters phi_s or
-            phi_p are lower than 0. If ratio of bond xi strength e
-            is less than 0.15 or larger than 0.8.
-            Is stress variation incr_stress is less than 0."""
-    return structuralcodes.codes.ec2_2004.As_min_p(
-        A_ct,
-        sigma_s,
-        fct_eff,
-        k,
-        kc,
-        Ap,
-        phi_s,
-        phi_p,
-        xi,
-        delta_s,
+    ValueError: if Ecm is less or equal to 0
+    ValueError: if fcm is less than 12+8MPa
+    ValueError: if eps_c1 is less or equal to 0
+    """
+    return structuralcodes.codes.ec2_2023.k_sargin(
+        Ecm,
+        fcm,
+        eps_c1,
     )
 
 
 @xw.func
-def ec2_2004_As_min_2(
-    wk: float,
-    sigma_s: float,
-    fct_eff: float,
-    h_cr: float,
-    h: float,
-    d: float,
-    delta_s: float = 0,
-    kc: t.Optional[float] = None,
-):
-    """Computes the minimum area of reinforcing steel within the tensile zone
-    for control of cracking areas
+def ec2_2023_eps_c2():
+    """The strain at maximum compressive stress of concrete for the
+    parabolic-rectangular law.
 
-    EUROCODE 2 1992-1-1:2004, Table (7.2N), Table (7.3N)
-
-    Args:
-        _wk (float): the characteristic crack width value in mm.
-        sigma_s (float): the steel stress value in MPa under the relevant
-            combination of actions.
-        fct_eff (float): is the mean value of the tensile strength in MPa of
-            the concrete effective at the time when the cracks may first be
-            expected to occur: fct,eff=fct or lower (fct(t)), is cracking
-            is expected earlier than 28 days.
-        h_cr (float): is the depth of the tensile zone immediately prior to
-            cracking, considering the characteristic values of prestress and
-            axial forces under the quasi-permanent combination of actions.
-        h (float): the overall depth of the section in mm.
-        d (float): is the effective depth to the centroid of the outer layer
-            of the reinforcement.
-        delta_s (float, optional): value of prestressed stress in MPa if
-            applicable
-        kc (float, optional): is a coefficient which takes account of the
-            stress distribution within the section immediately prior to
-            cracking and the change of the lever arm in a bending section.
-            'None' for pure tensile uniform axial section.
+    EN 1992-1-1:2023, Eq. 8.4
 
     Returns:
-        tuple(float, float): with the value of the maximum bar diameters in mm
-        in the first position and the maximum bar spacing in mm in the
-        second position
+    float: The strain at maximum compressive stress, absolute value, no
+    unit.
+    """
+    return structuralcodes.codes.ec2_2023.eps_c2()
+
+
+@xw.func
+def ec2_2023_eps_cu2():
+    """The ultimate strain of the parabolic-rectangular law.
+
+    EN 1992-1-1:2023, Eq. 8.4
+
+    Returns:
+    float: The ultimate strain, absolute value, no unit.
+    """
+    return structuralcodes.codes.ec2_2023.eps_cu2()
+
+
+@xw.func
+def ec2_2023_n_parabolic_rectangular():
+    """The exponent in the parabolic-rectangular law.
+
+    EN 1992-1-1:2023, Eq. 8.4
+    Returns:
+    float: The exponent n, absolute value, no unit.
+    """
+    return structuralcodes.codes.ec2_2023.n_parabolic_rectangular()
+
+
+@xw.func
+def ec2_2023_alpha_c_th():
+    """Returns the linear coefficient of thermal expansion in 1/C� for
+    concrete.
+
+    EN 1992-1-1:2023, 5.1.6-6.
+
+    Returns:
+    float: The linear coefficient of thermal expansion in 1/C� for
+    concrete.
+    """
+    return structuralcodes.codes.ec2_2023.alpha_c_th()
+
+
+@xw.func
+def ec2_2023_Es():
+    """Returns the value of the modulus of elasticity for weldable reinforcing
+    steel.
+
+    EN 1992-1-1:2023, 5.2.4-3.
+
+    Returns:
+    float: Modulus of elasticity in MPa.
+    """
+    return structuralcodes.codes.ec2_2023.Es()
+
+
+@xw.func
+def ec2_2023_alpha_s_th():
+    """Returns the linear coefficient of thermal expansion in 1/C� for weldable
+    reinforced steel.
+
+    EN 1992-1-1:2023, 5.2.4-5
+
+    Returns:
+    float: The linear coefficient of thermal expansion in 1/C� for weldable
+    reinforcement steel.
+    """
+    return structuralcodes.codes.ec2_2023.alpha_s_th()
+
+
+@xw.func
+def ec2_2023_weight_s():
+    """Returns the mean unit weight of reinforced steel for the purposes of
+    design in kN/m3.
+
+    EN 1992-1-1:2023.2.4-4.
+
+    Returns:
+    float: The mean unit weight in kN/m3.
+    """
+    return structuralcodes.codes.ec2_2023.weight_s()
+
+
+@xw.func
+def ec2_2023_fyd(fyk: float, gamma_s: float):
+    """Design value for the yielding stress for welding reinforcing steel.
+
+    EN 1992-1-1:2023, Eq (5.11).
+
+    Args:
+    fyk (float): Characteristic yield stress for the steel in MPa.
+    gamma_s (float): Safety coefficient.
+
+    Returns:
+    float: Design yielding stress for steel in MPa.
+
     Raises:
-        ValueError: if _wk, fct_eff, h_cr, h or d are less than 0
-        ValueError: if kc is not between 0 and 1
-        ValueError: if combination of wk and stress values are out of scope"""
-    return structuralcodes.codes.ec2_2004.As_min_2(
-        wk,
-        sigma_s,
-        fct_eff,
-        h_cr,
-        h,
-        d,
-        delta_s,
-        kc,
+    ValueError: If fyk is less than 0.
+    ValueError: If gamma_s is less than 1.
+    """
+    return structuralcodes.codes.ec2_2023.fyd(fyk, gamma_s)
+
+
+@xw.func
+def ec2_2023_eps_ud(eps_uk: float, gamma_s: float):
+    """Design value for the ultimate limit strain welding reinforcing steel.
+
+    EN 1992-1-1:2023, 5.2.4-2.
+
+    Args:
+    eps_uk (float): Characteristic ultimate limit strain.
+    gamma_s (float): Safety coefficient.
+
+    Returns:
+    float: Design ultimate strain limit.
+
+    Raises:
+    ValueError: If eps_uk is less than 0.
+    ValueError: If gamma_s is less than 1.
+    """
+    return structuralcodes.codes.ec2_2023.eps_ud(eps_uk, gamma_s)
+
+
+@xw.func
+def ec2_2023_sigma_s(
+    eps: float, fy: float, k: float, eps_u: float, Es: float = 200000
+):
+    """Compute the stress for welded reinforcing steel in MPa for a given
+    strain.
+
+    EN 1992-1-1:2023, 5.2.4.
+
+    Args:
+    eps (float): The strain value.
+    fy (float): The yielding stress in MPa. Use fyd for the design
+        strength, and fyk for the characteristic strength.
+    k (float): Curve parameter. Ratio between the ultimate stress and the
+        yielding stress. k = 1 for horizontal post-elastic branch without
+        strain limit.
+    eps_u (float): Ultimate strain at failure. Use eps_ud for the design
+        ultimate strain, and eps_uk for the characteristic ultimate strain.
+
+    Keyword Args:
+    Es (float): The modulus of elasticity for reinforcing steel.
+
+    Returns:
+    float: The nominal stress in MPa.
+
+    Raises:
+    ValueError: If eps is less than 0 or larger than eps_uk.
+    ValueError: If Es is less or equal to 0.
+    ValueError: If fy is less or equal to 0.
+    ValueError: If k is less than 1.
+    ValueError: If eps_u is less or equal to 0 and k > 1.
+    """
+    return structuralcodes.codes.ec2_2023.sigma_s(eps, fy, k, eps_u, Es)
+
+
+@xw.func
+def ec2_2023_fpd(fp01k: float, gamma_P: float):
+    """Computes the design value for the prestressing steel stress.
+
+    EN 1992-1-1:2023, 5.3.3.
+
+    Args:
+    fp01k (float): The 0.1% proof stress in MPa.
+    gamma_P (float): The safety coefficient.
+
+    Returns:
+    float: The design value for the design prestressing steel stress in
+    MPa.
+
+    Raises:
+    ValueError: If fp01k is less than 0.
+    ValueError: If gamma_P is less than 1.
+    """
+    return structuralcodes.codes.ec2_2023.fpd(fp01k, gamma_P)
+
+
+@xw.func
+def ec2_2023_sigma_p(
+    eps: float,
+    fpy: float,
+    fpu: float,
+    eps_u: float = 0.035,
+    Ep: float = 190000,
+):
+    """Computes the stress for prestressing steel as a function of the strain.
+
+    EN 1992-1-1:2023, 5.3.3.
+
+    Args:
+    eps (float): Strain value.
+    fpy (float): Yielding stress of the steel in MPa. Use fd for design
+        stress values, and fp01k for nominal stress values.
+    fpu (float): The maximum stress at eps_u in MPa. Use fpd for design
+        stress values, fpk for nominal stress values, and fpu == fpy for
+        horizontal post-elastic branch without strain limit.
+
+    Keyword Args:
+    eps_u (float): Ultimate strain. Use eps_uk = 0.035 for nominal ultimate
+        strain, and eps_ud for design ultimate strain.
+    Ep (float): Modulus of elasticity of prestressing steel in MPa.
+
+    Raises:
+    ValueError: If eps is less than 0 or larger than eps_u.
+    ValueError: If fpy is less or equal to 0.
+    ValueError: If fpu is less than fpy.
+    ValueError: If eps_u is lower or equal to 0.
+    ValueError: If _Ep is less or equal to 0.
+    """
+    return structuralcodes.codes.ec2_2023.sigma_p(
+        eps,
+        fpy,
+        fpu,
+        eps_u,
+        Ep,
     )
 
 
 @xw.func
-def ec2_2004_alpha_e(Es: float, Ecm: float):
-    """Compute the ratio between the steel and mean concrete
-    elastic modules.
+def ec2_2023_Ec_eff(fcm: float, phi: float, kE: float = 9500):
+    """Returns de effective modulus of elasticity from fcm and phi.
 
-    EUROCODE 2 1992-1-1:2004, Section 7.3.4-2
+    EN 1992-1-1:2023, Eq. (9.1).
 
     Args:
-        Es (float): steel elastic modulus in MPa
-        Ecm (float): concrete mean elastic modulus in MPa
+    fcm (float): The mean compressive strength in MPa.
+    phi (float): The creep coefficient.
+
+    Keyword Args:
+    kE (float): Constant to account for the type of aggregate.
 
     Returns:
-        float: ratio between modules
-    Raise:
-        ValueError: if any of es or ecm is lower than 0."""
-    return structuralcodes.codes.ec2_2004.alpha_e(Es, Ecm)
+    float: The effective modulus of elastiticy in MPa.
+    """
+    return structuralcodes.codes.ec2_2023.Ec_eff(fcm, phi, kE)
 
 
 @xw.func
-def ec2_2004_rho_p_eff(As_: float, xi1: float, Ap: float, Ac_eff: float):
-    """Effective bond ratio between areas
+def ec2_2023_As_min_y(
+    NEd: float, b: float, h: float, fct_eff: float, fyk: float
+):
+    """Returns the minimum reinforcement to avoid yielding of steel. Box or T
+    sections are to be divided into rectangles.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.10)
+    EN 1992-1-1:2023, Eq. (9.4)
+
+    Eq. (9.2) and (9.3) are particular cases of the general equation
+
+    Eq. (9.2) is valid for pure bending, hence NEd=0
+
+    Eq. (9.3) is valid for pure tension. The general expression has an upper
+    limit that equals the values of Eq. (9.3)
 
     Args:
-        As (float): steel area in mm2
-        _xi1 (float): the adjusted ratio of bond according
-            to expression (7.5)
-        Ap (float): the area in mm2 of post-tensioned tendons in ac_eff
-        Ac_eff (float): effective area of concrete in tension surrounding
-        the reinforcement or prestressing tendons of depth hc_eff.
+    NEd (float): SLS axial force applied on the section or rectangle
+        (compressions are negative) in kN.
+    b (float): The width of the section or rectangle in meters.
+    h (float): The height of the section or rectange in meters.
+    fct_eff (float): Effective tension strength of concrete (can normally
+        be taken as the mean tensile strength) in MPa.
+    fyk (float): Characteristic yield strength of steel in MPa.
 
     Returns:
-        float: with the retio between areas
-
-
-    Raise:
-        ValueError: if any of As, xi1, Ap or Ac_eff is less than 0"""
-    return structuralcodes.codes.ec2_2004.rho_p_eff(As_, xi1, Ap, Ac_eff)
+    tuple(float, float): The minimum tensile reinforcement to avoid
+    yielding of steel on the most tensioned fibre of the rectangle
+    (As_min_y1) in cm2, and the minimum tensile reinforcement to avoid
+    yielding of steel on the most tensioned fibre of the rectangle
+    (As_min_y2) in cm2.
+    """
+    return structuralcodes.codes.ec2_2023.As_min_y(NEd, b, h, fct_eff, fyk)
 
 
 @xw.func
-def ec2_2004_kt(load_type: str):
-    """Returns the kt factor dependent on the load duration for
-    the crack width calculation
+def ec2_2023_kh(b: float, h: float):
+    """Returns factor kh, which reduces the tensile strength of concrete to
+    account for imposed restrained deformations due to shrinkage.
+
+    EN 1992-1-1:2023, Eq. (9.5).
 
     Args:
-        load_type (str): the load type:
-            - 'short' for term loading
-            - 'long' for long term loading
+    b (float): Width of the rectangle in meters.
+    h (float): Height of the rectangle in meters.
 
     Returns:
-        float: with the kt factor
-
-    Raises:
-        ValueError: if load_type is not 'short' and not 'long'"""
-    return structuralcodes.codes.ec2_2004.kt(load_type)
+    float: Factor kh which reduces the tensile strength of concrete to
+    account for imposed restrained deformations due to shrinkage.
+    """
+    return structuralcodes.codes.ec2_2023.kh(b, h)
 
 
 @xw.func
-def ec2_2004_esm_ecm(
+def ec2_2023_wk_cal2(
+    kw: float, k_1_r: float, srm_cal: float, epssm_epscm: float
+):
+    """Returns the calculated characteristic crack width.
+
+    EN 1992-1-1:2023, Eq. (9.8).
+
+    Args:
+    kw (float): Factor that converts the mean crack spacing to a
+        characteristic value.
+    k_1_r (float): Factor accounting for the effect of curvature on crack
+        width - can be determined using the function k_1_r.
+    srm_cal (float): Mean crack spacing - can be determined using the
+        function srm_cal.
+    epssm_epscm (float): Mean diference of strain between steel and
+        concrete - can be determined using the function epssm_epscm.
+
+    Returns:
+    float: The calculated characteristic crack width in in units consistent
+    with srm_cal.
+    """
+    return structuralcodes.codes.ec2_2023.wk_cal2(
+        kw, k_1_r, srm_cal, epssm_epscm
+    )
+
+
+@xw.func
+def ec2_2023_k_1_r(h: float, x: float, ay: float):
+    """Returns k1/r factor to account for increase in crack width due to
+    curvature of the section in bending.
+
+    EN 1992-1-1:2023, Eq. (9.9).
+
+    Args:
+    h (float): Height of the section in consistent units (e.g. meters).
+    x (float): Distance from most compressed fibre to neutra axis in
+        consistent units (e.g. meters).
+    ay (float): Cover to centre of tensioned reinforcement closest to most
+        tensioned face in consistent units (e.g. meters).
+
+    Returns:
+    float: Factor k1/r (non-dimensional) which accounts for the increase in
+    crack width due to curvature of the section in bending.
+    """
+    return structuralcodes.codes.ec2_2023.k_1_r(h, x, ay)
+
+
+@xw.func
+def ec2_2023_epssm_epscm(
     sigma_s: float,
-    alpha_e: float,
-    rho_p_eff: float,
     kt: float,
     fct_eff: float,
+    rho_eff: float,
+    alphae: float,
     Es: float,
 ):
-    """Returns the strain difference (esm - ecm) needed to compute the crack
-    width. esm is the mean strain in the reinforcement under the relevant
-    combination of loads of imposed deformations and taking into account the
-    effects of tension stiffening. Only the additional tensile strain beyond
-    the state of zero strain of the concrete is considered. ecm is the mean
-    strain in the concrete between the cracks.
+    """Returns the mean strain difference between steel and concrete along 2
+    transfer lengths.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.9)
+    EN 1992-1-1:2023, Eq. (9.11).
 
     Args:
-        sigma_s (float): is the stress in MPa in the tension reinforcement
-            assuming a cracked section. FOr pretensioned members, s_steel may
-            be replaced by increment of s_steel stress variation in
-            prestressing tendons from the state of zero strain of the
-            concrete at the same level.
-        _alpha_e (float): is the ratio Es/Ecm
-        _rho_p_eff (float): effective bond ratio between areas given by the
-            Eq. (7.10)
-        _kt (float): is a factor dependent on the load duration
-        fct_eff (float): is the mean value of the tensile strength in MPa
-            of the concrete effectvie at the time when the cracks may
-            first be expected to occur: fct_eff=fctm or fctm(t) if
-            crack is expected earlier than 28 days.
-        Es: steel elastic mudulus in MPa
+    sigma_s (float): The stress in steel at the section of the crack.
+    kt (float): An integration factor to account for the variation in
+        strain in steel and concrete it is to be taken as 0.6 for short
+        term loading or instantaneous loading and equal to 0.4 for long
+        term or repeated loading.
+    fct_eff (float): The effective cracking stress, which can be taken
+        equal to the mean tensile strength of concrete, fctm.
+    rho_eff (float): The effective reinforcement ratio in the tension zone.
+    alphae (float): The equivalence factor equal to Es/Ecm.
+    Es (float): The modulus of elasticity of steel, normally taken as 200
+        GPa.
 
     Returns:
-        float: the strain difference between concrete and steel
-
-    Raises:
-        ValueError: if any sigma_s, _alpha_e, _rho_p_eff, fct_eff or Es is less
-            than 0.
-        ValueError: if _kt is not 0.6 and not 0.4"""
-    return structuralcodes.codes.ec2_2004.esm_ecm(
+    float: The mean strain difference bewteen steel and concrete along 2
+    transfer lengths.
+    """
+    return structuralcodes.codes.ec2_2023.epssm_epscm(
         sigma_s,
-        alpha_e,
-        rho_p_eff,
         kt,
         fct_eff,
+        rho_eff,
+        alphae,
         Es,
     )
 
 
 @xw.func
-def ec2_2004_w_spacing(c: float, phi: float):
-    """Computes the distance threshold from which the
-    maximum crack spacing is constant.
+def ec2_2023_kfl(h: float, xg: float, hceff: float):
+    """Returns factor kfl which accounts for the distribution of stresses
+    before cracking.
 
-    EUROCODE 2 1992-1-1:2004, Sect. (7.3.4-3)
-
-    Args:
-        c (float): cover of  the longitudinal reinforcement in mm
-        phi (float): is the bar diameter in mm. Where mixed bar diameters
-            used, then it should be replaced for an equivalente bar diameter.
-
-    Returns:
-        float: threshold distance in mm
-
-    Raises:
-        ValueError: if any of c or phi is less than 0."""
-    return structuralcodes.codes.ec2_2004.w_spacing(c, phi)
-
-
-@xw.func
-def ec2_2004_phi_eq(n1: int, n2: int, phi1: float, phi2: float):
-    """Computes the equivalent diameter. For a section with n1 bars of
-    diameter phi1 and n2 bars of diameter phi2
-
-    EUROCODE 2 1992-1-1:2004, Sect. (7.12)
+    EN 1992-1-1:2023, Eq. (9.17).
 
     Args:
-        n1 (int): number of bars with diameter phi1
-        n2 (int): number of bars with diameter phi2
-        phi1 (float): diameter of n1 bars in mm
-        phi2 (float): diamater of n2 bars in mm
+    h (float): Height of the cross section.
+    xg (float): Distance from the compressed fibre to the centroid of the
+        uncracked section.
+    hceff (float): Height of the effective tension area.
 
     Returns:
-        float: the equivalent diameter in mm
-
-    Raises:
-        ValueError: if any of n1 or n2 is less than 0
-        ValueError: if any of phi1 or phi2 is less than 0
-        TypeError: if any of n1 or n2 is not an integer"""
-    return structuralcodes.codes.ec2_2004.phi_eq(n1, n2, phi1, phi2)
+    float: Returns factor kfl which accounts for the distribution of
+    stresses before cracking.
+    """
+    return structuralcodes.codes.ec2_2023.kfl(h, xg, hceff)
 
 
 @xw.func
-def ec2_2004_k1(bond_type: str):
-    """Get the k1 coefficient which takes account of the bond properties
-    of the bounded reinforcement
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.11-k1)
-
-    Args:
-        bond_type (str): the bond property of the reinforcement.
-        Possible values:
-            - 'bond': for high bond bars
-            - 'plane': for bars with an effectively plain surface (e.g.
-            prestressing tendons)
-
-    Returns:
-        (float): value of the k1 coefficient
-
-    Raises:
-        ValueError: if bond_type is neither 'bond' nor 'plane'
-        TypeError: if bond_type is not an str"""
-    return structuralcodes.codes.ec2_2004.k1(bond_type)
-
-
-@xw.func
-def ec2_2004_k2(epsilon_r: float):
-    """Computes a coefficient which takes into account of the
-    distribution of strain:
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.13)
-
-    Args:
-        epsilon_r (float): ratio epsilon_2/epsilon_1 where epsilon_1 is
-            thre greater and epsilon_2 is the lesser strain at the boundaries
-            of the section considererd, assessed on the basis of a cracked
-            section. epsilon_r=0 for bending and epsilon_r=1 for pure tension.
-
-    Returns:
-        float: the k2 coefficient value.
-
-    Raises:
-        ValueError: if epsilon_r is not between 0 and 1."""
-    return structuralcodes.codes.ec2_2004.k2(epsilon_r)
-
-
-@xw.func
-def ec2_2004_k3():
-    """Returns the k3 coefficient for computing sr_max
-
-    Returns:
-        float: value for the coefficient"""
-    return structuralcodes.codes.ec2_2004.k3()
-
-
-@xw.func
-def ec2_2004_k4():
-    """Returns the k4 coefficient for computing sr_max
-
-    Returns:
-        float: value for the coefficient"""
-    return structuralcodes.codes.ec2_2004.k4()
-
-
-@xw.func
-def ec2_2004_sr_max_close(
+def ec2_2023_srm_cal(
     c: float,
+    kfl_: float,
+    kb: float,
     phi: float,
-    rho_p_eff: float,
-    k1: float,
-    k2: float,
-    k3: float,
-    k4: float,
+    rho_eff: float,
+    kw: float,
+    h,
+    x: float,
 ):
-    """Computes the maximum crack spacing in cases where bonded reinforcement
-    is fixed at reasonably close centres within the tension zone
-    (w_spacing<=5(c+phi/2)).
+    """Returns the mean crack spacing.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.11)
+    EN 1992-1-1:2023, Eq. (9.15).
 
     Args:
-        c (float): is the cover in mm of the longitudinal reinforcement
-        phi (float): is the bar diameter in mm. Where mixed bar diameters
-            used, then it should be replaced for an equivalente bar diameter.
-        _rho_p_eff (float): effective bond ratio between areas given by the
-            Eq. (7.10)
-        _k1 (float): coefficient that takes into account the bound properties
-            of the bonded reinforcement
-        _k2 (float): coefficient that takes into account the distribution of
-            of the strain
-        _k3 (float): coefficient from the National Annex
-        _k4 (float): coefficient from the National Annex
+    c (float): Concrete cover of reinforcement to bar surface. Larger value
+        of lateral and vertical cover should be applied.
+    kfl (float): Factor accounting for distribution of stresses prior to
+        cracking.
+    kb (float): Factor accounting for bond conditions.
+    phi (float): Bar diameter.
+    rho_eff(float): Effective reinforcement ratio in the tension zone.
+    kw (float): Factor converting the mean crack spacing into a
+        characteristic crack spacing, with a reocmmended value of 1.3
+        (NDP).
+    h (float): Height of the cross section.
+    x (float): Depth of the neutral axis measured form the most compressed
+        fibre.
 
     Returns:
-        float: the maximum crack spaing in mm.
-
-    Raises:
-        ValueError: if one or more of c, phi, _rho_p_eff, _k3 or _k4
-            is lower than zero.
-        ValueError: if _k1 is not 0.8 or 1.6
-        ValueError: if _k2 is not between 0.5 and 1.0"""
-    return structuralcodes.codes.ec2_2004.sr_max_close(
+    float: The mean crack spacing in units consistent with c and phi.
+    """
+    return structuralcodes.codes.ec2_2023.srm_cal(
         c,
+        kfl_,
+        kb,
         phi,
-        rho_p_eff,
-        k1,
-        k2,
-        k3,
-        k4,
+        rho_eff,
+        kw,
+        h,
+        x,
     )
 
 
 @xw.func
-def ec2_2004_sr_max_far(h: float, x: float):
-    """Computes the maximum crack spacing in cases where bonded reinforcement
-    is fixed at reasonably close centres within the tension zone
-    (w_spacing>5(c+phi/2)).
+def ec2_2023_wk_cal(
+    kw: float,
+    h: float,
+    xg: float,
+    hc_eff: float,
+    c: float,
+    kb: float,
+    phi: float,
+    rho_eff: float,
+    x: float,
+    sigma_s: float,
+    kt: float,
+    fct_eff: float,
+    alphae: float,
+    Es: float,
+):
+    """Returns the characteristic crack width, wk,cal, as well as auxiliary
+    variables, 1/r, srm,cal and epssm-epscm.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.14)
-
-    Args:
-        h (float): total depth of the beam in mm
-        x (float): distance to non tension area of the element mm
-
-    Returns:
-        float: maximum crack spacing in mm
-
-    Raises:
-        ValueError: if one of h or x is less than zero.
-        ValueError: x is greater than h."""
-    return structuralcodes.codes.ec2_2004.sr_max_far(h, x)
-
-
-@xw.func
-def ec2_2004_sr_max_theta(sr_max_y: float, sr_max_z: float, theta: float):
-    """Computes the crack spacing sr_max when there is an angle
-    between the angle of  principal stress and the direction
-    of the reinforcement, for members in two orthogonal directions,
-    that is significant (> 15 degrees).
-
-    EUROCODE 2 1992-1-1:2004, Eq. (7.15)
+    EN1992-1-1:2023 Eq. (9.8), complemented with Eq. (9.11), Eq. (9.15), Eq.
+    (9.17).
 
     Args:
-        sr_max_y (float): crack spacing in mm in the y-direction.
-        sr_max_z (float): crack spacing in mm in the z-direction.
-        theta (float): angle in radians between the reinforcement in the
-            y-direction and the direction of the principal tensile stress.
+    kw (float): Factor that converts the mean crack spacing to a
+        characteristic value.
+    h (float): Height of cross section.
+    xg (float): Depth of centroid of section measured from compressed
+        fibre.
+    hc_eff (float): Height of the effective tensioned concrete area.
+    c (float): Concrete cover of reinforcement to bar surface. Larger
+        value of lateral and vertical cover should be applied.
+    kb (float): Factor account for bond conditions of bar.
+    phi (float): Diameter of tensioned bars (for different bar diameters,
+        equivalent diameter according to Eq. (9.19).
+    rho_eff (float): Effective tension reinforcement ratio.
+    x (float): Depth of the neutral axis of the cracked section measured
+        from compressed fibre.
+    sigma_s (float): Tension in most tensioned bar according to fully
+        cracked analysis.
+    kt (float): Factor accounting for tension stiffening.
+    fct_eff (float): Effective tensile strength of concrete.
+    alphae (float): Modular ratio Es/Ecm.
+    Es (float): Modulus of elasticity of steel bars (normally Es=200 MPa).
 
     Returns:
-        float: the crack spacing in mm.
-
-    Raises:
-        ValueError: if sr_max_y or sr_max_z is negative.
-        ValueError: if theta is not between 0 and pi/2"""
-    return structuralcodes.codes.ec2_2004.sr_max_theta(
-        sr_max_y, sr_max_z, theta
+    Tuple[float, float, float, float]: The characteristic crack width,
+    wk,cal, in consistent units, as well as auxiliary variables, 1/r,
+    srm,cal and epssm-epscm.
+    """
+    return structuralcodes.codes.ec2_2023.wk_cal(
+        kw,
+        h,
+        xg,
+        hc_eff,
+        c,
+        kb,
+        phi,
+        rho_eff,
+        x,
+        sigma_s,
+        kt,
+        fct_eff,
+        alphae,
+        Es,
     )
 
 
 @xw.func
-def ec2_2004_wk(sr_max: float, esm_ecm: float):
-    """Computes the crack width
+def ec2_2023_delta_simpl(
+    delta_loads: float,
+    delta_shr: float,
+    fck1: float,
+    phi1: float,
+    b1: float,
+    h: float,
+    d: float,
+    As_1: float,
+    Mk: float,
+):
+    """Simplified calculation of the deflection for rectangular sections.
 
-    EUROCODE 2 1992-1-1:2004, Eq. (7.8)
-
-    Args:
-        sr_max (float): the maximum crack length spacing in mm.
-        _esm_ecm (float): the difference between the mean strain in the
-            reinforcement under relevant combination of loads, including
-            the effect of imposed deformations and taking into account
-            tension stiffening and the mean strain in the concrete
-            between cracks.
-
-    Returns:
-        float: crack width in mm.
-
-    Raises:
-        ValueError: if any of sr_max or esm_ecm is less than zero."""
-    return structuralcodes.codes.ec2_2004.wk(sr_max, esm_ecm)
-
-
-@xw.func
-def mc2010_fcm(fck: float, delta_f: float = 8.0):
-    """Compute the mean concrete compressive strength from the characteristic
-    strength.
-
-    fib Model Code 2010, Eq. (5.1-1)
+    EN1992-1-1:2023, Eq. (9.23).
 
     Args:
-        fck (float): The characteristic compressive strength in MPa.
-
-    Keyword Args:
-        delta_f (float): The difference between the mean and the
-        characteristic strength.
-
-    Returns:
-        float: The mean compressive strength in MPa."""
-    return structuralcodes.codes.mc2010.fcm(fck, delta_f)
-
-
-@xw.func
-def mc2010_fctm(fck: float):
-    """Compute the mean concrete tensile strength from the characteristic
-    compressive strength.
-
-    fib Model Code 2010, Eqs. (5.1-3a) and (5.1-3b)
-
-    Args:
-        fck (float): The characteristic compressive strength in MPa.
+    delta_loads (float): Linear elastic deflection due to loads.
+    delta_shr (float): Linear elastic deflection due to shrinkage.
+    fck1 (float): Characteristic concrete strength in MPa.
+    phi1 (float): Weighted mean value of the creep coefficient.
+    b1 (float): Width of rectangular cross-section in m.
+    h (float): Height of rectanguar cross-section in m.
+    d (float): Effective height of cross-section in m.
+    As1 (float): Tension reinforcement at centre span for continuous in cm2
+        beams or at the embedment for a cantilever.
+    Mk (float): Characteristic moment at centre span for continuous
+        beams or at the embedment for a cantilever.
 
     Returns:
-        float: The mean tensile strength in MPa."""
-    return structuralcodes.codes.mc2010.fctm(fck)
+    float: The deflection of the beam in units consistent with delta_loads
+    and delta_shr.
+    """
+    return structuralcodes.codes.ec2_2023.delta_simpl(
+        delta_loads,
+        delta_shr,
+        fck1,
+        phi1,
+        b1,
+        h,
+        d,
+        As_1,
+        Mk,
+    )
 
 
-@xw.func
-def mc2010_fctkmin(fctm: float):
-    """Compute the lower bound value of the characteristic tensile strength
-    from the mean tensile strength.
-
-    fib Model Code 2010, Eq. (5.1-4)
-
-    Args:
-        _fctm (float): The mean tensile strength in MPa.
-
-    Returns:
-        float: Lower bound of the characteristic tensile strength in MPa."""
-    return structuralcodes.codes.mc2010.fctkmin(fctm)
-
-
-@xw.func
-def mc2010_fctkmax(fctm: float):
-    """Compute the upper bound value of the characteristic tensile strength
-    from the mean tensile strength.
-
-    fib Model Code 2010, Eq. (5.1-5)
-
-    Args:
-        _fctm (float): The mean tensile strength in MPa.
-
-    Returns:
-        float: Upper bound of the characteristic tensile strength in MPa."""
-    return structuralcodes.codes.mc2010.fctkmax(fctm)
-
-
-@xw.func
-def mc2010_Gf(fck: float):
-    """Compute tensile fracture energy from characteristic compressive
-    strength.
-
-    fib Model Code 2010, Eq. (5.1-9)
-
-    Args:
-        fck (float): The characteristic compressive strength in MPa.
-
-    Returns:
-        float: The tensile fracture energy in N/m."""
-    return structuralcodes.codes.mc2010.Gf(fck)
-
-
-if __name__ == "__main__":
-    xw.Book("pruebaxlwings.xlsm").set_mock_caller()
+if __name__ == '__main__':
+    xw.Book('pruebaxlwings.xlsm').set_mock_caller()
     main()
